@@ -13,78 +13,58 @@ document.addEventListener('DOMContentLoaded', () => {
 
   addServiceForm.addEventListener('submit', (event) => {
     event.preventDefault();
-    try {
-      const serviceName = document.getElementById('serviceName').value;
-      const serviceDate = document.getElementById('serviceDate').value;
-      const startTime = document.getElementById('startTime').value;
-      const endTime = document.getElementById('endTime').value;
-      const serviceType = document.getElementById('serviceType').value;
 
-      if (!serviceName || !serviceDate || !startTime || !endTime) {
-        alert('Por favor, preencha todos os campos.');
-        return;
-      }
+    const serviceName = document.getElementById('serviceName').value;
+    const serviceDate = document.getElementById('serviceDate').value;
+    const startTime = document.getElementById('startTime').value;
+    const endTime = document.getElementById('endTime').value;
+    const serviceType = document.getElementById('serviceType').value;
 
-      const startDateTime = new Date(`${serviceDate}T${startTime}`);
-      let endDateTime = new Date(`${serviceDate}T${endTime}`);
+    if (!serviceName || !serviceDate || !startTime || !endTime) return alert('Preencha todos os campos.');
 
-      if (isNaN(startDateTime.getTime()) || isNaN(endDateTime.getTime())) {
-        alert('A data ou hora inserida é inválida.');
-        return;
-      }
+    const startDateTime = new Date(`${serviceDate}T${startTime}`);
+    let endDateTime = new Date(`${serviceDate}T${endTime}`);
+    if (endDateTime <= startDateTime) endDateTime.setDate(endDateTime.getDate() + 1);
 
-      if (endDateTime <= startDateTime) endDateTime.setDate(endDateTime.getDate() + 1);
+    const totalHours = (endDateTime - startDateTime) / (1000 * 60 * 60);
+    const baseHours = 3;
+    const gracePeriodLimit = baseHours + (20 / 60);
+    let extraHours = 0;
+    if (totalHours > gracePeriodLimit) extraHours = totalHours - gracePeriodLimit;
 
-      const totalHours = (endDateTime - startDateTime) / (1000 * 60 * 60);
-      const baseHours = 3;
-      const gracePeriodLimit = baseHours + (20 / 60);
-      let extraHours = 0;
-      if (totalHours > gracePeriodLimit) extraHours = totalHours - gracePeriodLimit;
+    const valorAtendimentoBase = 120.00;
+    const valorHoraExtra = 25.00;
+    const valorDiaria = 250.00;
+    const atendimentoTotal = valorAtendimentoBase + (extraHours * valorHoraExtra);
+    let serviceValue = (serviceType === 'atendimento') ? atendimentoTotal : valorDiaria;
 
-      const valorAtendimentoBase = 120.00;
-      const valorHoraExtra = 25.00;
-      const valorDiaria = 250.00;
-      const atendimentoTotal = valorAtendimentoBase + (extraHours * valorHoraExtra);
-      let serviceValue = (serviceType === 'atendimento') ? atendimentoTotal : valorDiaria;
+    allServices.push({
+      name: serviceName,
+      date: startDateTime,
+      atendimentoValue: atendimentoTotal,
+      diariaValue: valorDiaria,
+      chosenValue: serviceValue,
+      hours: totalHours
+    });
 
-      allServices.push({
-        name: serviceName,
-        date: startDateTime,
-        atendimentoValue: atendimentoTotal,
-        diariaValue: valorDiaria,
-        chosenValue: serviceValue,
-        hours: totalHours
-      });
-
-      renderService(serviceName, startDateTime, endDateTime, totalHours, serviceType, atendimentoTotal, valorDiaria);
-      updateSummary();
-      addServiceForm.reset();
-    } catch (error) {
-      console.error("Ocorreu um erro:", error);
-      alert("Não foi possível adicionar o serviço.");
-    }
+    renderService(serviceName, startDateTime, endDateTime, totalHours, serviceType, atendimentoTotal, valorDiaria);
+    updateSummary();
+    addServiceForm.reset();
   });
 
   function renderService(serviceName, startDateTime, endDateTime, totalHours, serviceType, atendimentoTotal, valorDiaria) {
     const listItem = document.createElement('li');
     listItem.classList.add('service-item');
-    const colorIndex = serviceCount % borderColors.length;
+    const colorIndex = (serviceCount) % borderColors.length;
     listItem.style.borderLeftColor = borderColors[colorIndex];
 
     const durationH = Math.floor(totalHours);
     const durationM = Math.round((totalHours - durationH) * 60);
     const durationText = `${durationH}h ${durationM}min`;
 
-    let comparisonText = '';
-    if (serviceType === 'atendimento') {
-      comparisonText = valorDiaria > atendimentoTotal
-        ? `Compensava mais a Diária (R$ ${valorDiaria.toFixed(2)})`
-        : 'Atendimento Padrão foi a melhor opção.';
-    } else {
-      comparisonText = atendimentoTotal > valorDiaria
-        ? `Compensava mais o Atendimento (R$ ${atendimentoTotal.toFixed(2)})`
-        : 'A Diária foi a melhor opção.';
-    }
+    const comparisonText = serviceType === 'atendimento'
+      ? valorDiaria > atendimentoTotal ? `Compensava mais a Diária (R$ ${valorDiaria.toFixed(2)})` : 'Atendimento Padrão foi a melhor opção.'
+      : atendimentoTotal > valorDiaria ? `Compensava mais o Atendimento (R$ ${atendimentoTotal.toFixed(2)})` : 'A Diária foi a melhor opção.';
 
     const hourlyRate = totalHours > 0 ? ((serviceType === 'atendimento' ? atendimentoTotal : valorDiaria) / totalHours) : 0;
     const extraHours = totalHours > (3 + 20/60) ? totalHours - (3 + 20/60) : 0;
@@ -94,15 +74,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let analysisHTML = '';
     if (serviceType === 'atendimento') {
-      if (atendimentoTotal >= valorDiaria)
-        analysisHTML = `<p class="analysis-result">Você ganhou R$ ${difference.toFixed(2)} a mais do que se tivesse cobrado por diária.</p>`;
-      else
-        analysisHTML = `<p class="analysis-result loss">Você deixou de ganhar R$ ${difference.toFixed(2)} por não ter cobrado a diária.</p>`;
+      if (atendimentoTotal >= valorDiaria) analysisHTML = `<p class="analysis-result">Você ganhou R$ ${difference.toFixed(2)} a mais do que se tivesse cobrado a diária.</p>`;
+      else analysisHTML = `<p class="analysis-result loss">Você deixou de ganhar R$ ${difference.toFixed(2)} por não ter cobrado a diária.</p>`;
     } else {
-      if (valorDiaria >= atendimentoTotal)
-        analysisHTML = `<p class="analysis-result">Você ganhou R$ ${difference.toFixed(2)} a mais por ter cobrado a diária.</p>`;
-      else
-        analysisHTML = `<p class="analysis-result loss">Você deixou de ganhar R$ ${difference.toFixed(2)} por não ter cobrado por atendimento.</p>`;
+      if (valorDiaria >= atendimentoTotal) analysisHTML = `<p class="analysis-result">Você ganhou R$ ${difference.toFixed(2)} a mais por ter cobrado a diária.</p>`;
+      else analysisHTML = `<p class="analysis-result loss">Você deixou de ganhar R$ ${difference.toFixed(2)} por não ter cobrado por atendimento.</p>`;
     }
 
     const formatOptions = { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' };
@@ -110,7 +86,9 @@ document.addEventListener('DOMContentLoaded', () => {
       <div class="service-item-main">
         <div class="details">
           <div class="service-title">${serviceName}</div>
-          <div class="timestamps"><div><strong>Entrada:</strong> ${startDateTime.toLocaleString('pt-BR', formatOptions)} | <strong>Saída:</strong> ${endDateTime.toLocaleString('pt-BR', formatOptions)}</div></div>
+          <div class="timestamps">
+            <div><strong>Entrada:</strong> ${startDateTime.toLocaleString('pt-BR', formatOptions)} | <strong>Saída:</strong> ${endDateTime.toLocaleString('pt-BR', formatOptions)}</div>
+          </div>
           <div class="duration">Duração total: ${durationText}</div>
           <div class="comparison">${comparisonText}</div>
         </div>
@@ -148,11 +126,18 @@ document.addEventListener('DOMContentLoaded', () => {
     serviceCountEl.textContent = serviceCount;
   }
 
+  // Função PDF compatível com iOS e Android
   downloadPdfBtn.addEventListener('click', () => {
-    if (allServices.length === 0) {
-      alert("Nenhum serviço foi adicionado para gerar o relatório.");
-      return;
-    }
+    if (allServices.length === 0) return alert("Nenhum serviço foi adicionado para gerar o relatório.");
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    let y = 20;
+    doc.setFontSize(18);
+    doc.text("Relatório de Ganhos", 14, y);
+    y += 10;
+    doc.setFontSize(12);
 
     const reportTotalGains = allServices.reduce((sum, s) => sum + s.chosenValue, 0);
     const reportTotalHours = allServices.reduce((sum, s) => sum + s.hours, 0);
@@ -160,44 +145,22 @@ document.addEventListener('DOMContentLoaded', () => {
     const reportTotalHoursH = Math.floor(reportTotalHours);
     const reportTotalHoursM = Math.round((reportTotalHours - reportTotalHoursH) * 60);
 
-    // HTML de cada serviço para o PDF
-    let servicesHTML = '';
+    doc.text(`Total de Serviços: ${allServices.length}`, 14, y); y += 7;
+    doc.text(`Total de Horas Trabalhadas: ${reportTotalHoursH}h ${reportTotalHoursM}min`, 14, y); y += 7;
+    doc.text(`Valor Total Recebido: R$ ${reportTotalGains.toFixed(2)}`, 14, y); y += 7;
+    doc.text(`Média de Ganhos por Hora: R$ ${reportAvgHourlyRate.toFixed(2)}`, 14, y); y += 10;
+
     allServices.forEach((s, index) => {
       const hoursH = Math.floor(s.hours);
       const hoursM = Math.round((s.hours - hoursH) * 60);
-      servicesHTML += `
-        <div style="margin-top: 15px; border-bottom: 1px solid #ccc; padding-bottom: 10px;">
-          <p><strong>Serviço ${index + 1}:</strong> ${s.name}</p>
-          <p><strong>Data:</strong> ${s.date.toLocaleDateString('pt-BR')}</p>
-          <p><strong>Duração:</strong> ${hoursH}h ${hoursM}min</p>
-          <p><strong>Valor Recebido:</strong> R$ ${s.chosenValue.toFixed(2)}</p>
-        </div>
-      `;
+      doc.text(`Serviço ${index + 1}: ${s.name}`, 14, y); y += 6;
+      doc.text(`Data: ${s.date.toLocaleDateString('pt-BR')}`, 14, y); y += 6;
+      doc.text(`Duração: ${hoursH}h ${hoursM}min`, 14, y); y += 6;
+      doc.text(`Valor Recebido: R$ ${s.chosenValue.toFixed(2)}`, 14, y); y += 8;
+
+      if (y > 270) { doc.addPage(); y = 20; }
     });
 
-    const reportHTML = `
-      <div style="font-family: Arial, sans-serif; padding: 25px; font-size: 12pt;">
-        <h1 style="font-size: 18pt; color: #000; margin-bottom: 25px;">Relatório de Ganhos</h1>
-        <div style="font-size: 14pt; line-height: 1.6;">
-          <p><strong>Total de Horas Trabalhadas:</strong> ${reportTotalHoursH}h ${reportTotalHoursM}min</p>
-          <p><strong>Valor Total Recebido:</strong> R$ ${reportTotalGains.toFixed(2)}</p>
-          <p><strong>Média de Ganhos por Hora:</strong> R$ ${reportAvgHourlyRate.toFixed(2)}</p>
-          ${servicesHTML}
-        </div>
-      </div>
-    `;
-
-    const reportElement = document.createElement('div');
-    reportElement.innerHTML = reportHTML;
-
-    const opt = {
-      margin: 0.5,
-      filename: 'relatorio-de-ganhos.pdf',
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2 },
-      jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
-    };
-
-    html2pdf().from(reportElement).set(opt).save();
+    doc.save("relatorio-de-ganhos.pdf");
   });
 });
