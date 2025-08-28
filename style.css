@@ -73,3 +73,8 @@ input:focus, select:focus { outline: none; border-color: var(--border-focus-colo
 .details-toggle:hover { text-decoration: underline; }
 .details-content { display: none; margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border-color); font-size: 0.9rem; }
 .details-content.visible { display: block; }
+.details-content hr {
+  border: none;
+  border-top: 1px dashed var(--border-color);
+  margin: 10px 0;
+}

@@ -7,6 +7,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const downloadPdfBtn = document.getElementById('downloadPdfBtn');
   const borderColors = ['#0072c6', '#6a00ff', '#fa6800', '#18837e', '#a20025', '#00a300'];
 
+  const valorAtendimentoBase = 120.00;
+  const valorHoraExtra = 25.00;
+  const valorDiaria = 250.00;
+
   let allServices = [];
   let totalGains = 0;
   let serviceCount = 0;
@@ -32,9 +36,6 @@ document.addEventListener('DOMContentLoaded', () => {
     let extraHours = 0;
     if (totalHours > gracePeriodLimit) extraHours = totalHours - gracePeriodLimit;
 
-    const valorAtendimentoBase = 120.00;
-    const valorHoraExtra = 25.00;
-    const valorDiaria = 250.00;
     const atendimentoTotal = valorAtendimentoBase + (extraHours * valorHoraExtra);
     let serviceValue = (serviceType === 'atendimento') ? atendimentoTotal : valorDiaria;
 
@@ -96,9 +97,13 @@ document.addEventListener('DOMContentLoaded', () => {
       </div>
       <button class="details-toggle">Ver detalhes</button>
       <div class="details-content">
-        <p><strong>Cálculo Base:</strong></p>
+        <p><strong>Regras de Cálculo:</strong></p>
+        <p>• Valor Fixo Atendimento: R$ ${valorAtendimentoBase.toFixed(2)}</p>
+        <p>• Valor por Hora Extra: R$ ${valorHoraExtra.toFixed(2)}</p>
+        <hr>
+        <p><strong>Detalhamento do Serviço:</strong></p>
         <p>• Horas Extras Feitas: ${extraHoursH}h ${extraHoursM}min</p>
-        <p>• Valor Recebido por Extras: R$ ${(extraHours * 25).toFixed(2)}</p>
+        <p>• Valor Recebido por Extras: R$ ${(extraHours * valorHoraExtra).toFixed(2)}</p>
         <p>• Ganho por Hora no Serviço: R$ ${hourlyRate.toFixed(2)}</p>
         <div class="analysis-section">
           <p><strong>Análise Financeira:</strong></p>
@@ -115,7 +120,7 @@ document.addEventListener('DOMContentLoaded', () => {
     detailsToggleBtn.addEventListener('click', () => {
       const detailsContent = listItem.querySelector('.details-content');
       detailsContent.classList.toggle('visible');
-      detailsToggleBtn.textContent = detailsContent.classList.contains('visible') ? 'Ocultar detalhes' : 'Ver detalhes';
+      detailsToggleBtn.textContent = detailsContent.classList.contains('visible') ? 'Ocular detalhes' : 'Ver detalhes';
     });
   }
 
@@ -126,7 +131,6 @@ document.addEventListener('DOMContentLoaded', () => {
     serviceCountEl.textContent = serviceCount;
   }
 
-  // Função PDF compatível com iOS e Android
   downloadPdfBtn.addEventListener('click', () => {
     if (allServices.length === 0) return alert("Nenhum serviço foi adicionado para gerar o relatório.");
 
