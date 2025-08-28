@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lançamento de Ganhos</title>
+  <link href="https://fonts.googleapis.com/css2?family=Segoe+UI:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <h1>Controle de Ganhos de TI</h1>
+
+    <div id="summary" class="summary-grid">
+      <div class="summary-box">
+        <h2>Ganho Total</h2>
+        <p id="totalGains">R$ 0,00</p>
+      </div>
+      <div class="summary-box">
+        <h2>Total de Serviços</h2>
+        <p id="serviceCount">0</p>
+      </div>
+    </div>
+
+    <div class="form-container">
+      <h3>Adicionar Novo Serviço</h3>
+      <form id="addServiceForm">
+        <div class="form-group">
+          <label for="serviceName">Nome do Serviço / Cliente</label>
+          <input type="text" id="serviceName" name="serviceName" placeholder="Ex: Instalação Servidor - Empresa X" required>
+        </div>
+        <div class="form-group">
+          <label for="serviceDate">Data do Serviço</label>
+          <input type="date" id="serviceDate" name="serviceDate" required>
+        </div>
+        <div class="time-inputs">
+          <div class="form-group">
+            <label for="startTime">Hora de Início</label>
+            <input type="time" id="startTime" name="startTime" required>
+          </div>
+          <div class="form-group">
+            <label for="endTime">Hora de Fim</label>
+            <input type="time" id="endTime" name="endTime" required>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="serviceType">Tipo de Serviço Cobrado</label>
+          <select id="serviceType" name="serviceType" required>
+            <option value="atendimento">Atendimento Padrão</option>
+            <option value="diaria">Diária</option>
+          </select>
+        </div>
+        <button type="submit" class="button-primary">Adicionar Serviço</button>
+      </form>
+    </div>
+
+    <div class="actions-container">
+      <button id="downloadPdfBtn" class="button-secondary">Baixar Relatório Completo</button>
+    </div>
+
+    <div class="service-list-container">
+      <h2>Serviços Lançados</h2>
+      <ul id="serviceList"></ul>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,173 @@
+/* style.css */
+:root {
+  --primary-color: #0072c6;
+  --primary-hover-color: #005a9e;
+  --secondary-color: #333333;
+  --secondary-hover-color: #1a1a1a;
+  --bg-color: #ffffff;
+  --text-color: #000000;
+  --text-light-color: #666666;
+  --border-color: #cccccc;
+  --border-focus-color: var(--primary-color);
+}
+
+body {
+  font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  padding: 20px;
+  font-weight: 400;
+}
+
+.container {
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+h1 {
+  font-size: 3.5rem;
+  font-weight: 300;
+  margin-bottom: 30px;
+  text-align: left;
+  color: var(--text-color);
+}
+
+h2, h3 {
+  font-size: 1.5rem;
+  font-weight: 300;
+  text-align: left;
+  margin-bottom: 20px;
+  border-bottom: 2px solid var(--border-color);
+  padding-bottom: 10px;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 15px;
+  margin-bottom: 30px;
+}
+
+.summary-box {
+  background-color: var(--primary-color);
+  color: #ffffff;
+  padding: 20px;
+  text-align: right;
+}
+
+.summary-box h2 {
+  font-size: 1.1rem;
+  font-weight: 400;
+  margin: 0;
+  opacity: 0.8;
+}
+
+.summary-box p {
+  font-size: 2.5rem;
+  font-weight: 600;
+  margin: 5px 0 0 0;
+}
+
+.form-container { padding-top: 10px; }
+
+.form-group { margin-bottom: 20px; }
+
+.time-inputs { display: flex; gap: 20px; }
+
+.time-inputs .form-group { flex: 1; }
+
+label { display: block; margin-bottom: 8px; font-size: 1rem; font-weight: 600; }
+
+input[type="text"], input[type="date"], input[type="time"], select {
+  width: 100%;
+  padding: 10px;
+  border: 2px solid var(--border-color);
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  font-size: 1rem;
+  font-family: 'Segoe UI', sans-serif;
+  transition: border-color 0.2s ease;
+}
+
+input[type="text"]:focus, input[type="date"]:focus, input[type="time"]:focus, select:focus {
+  outline: none;
+  border-color: var(--border-focus-color);
+}
+
+.button-primary, .button-secondary {
+  width: 100%;
+  padding: 15px;
+  color: white;
+  border-style: solid;
+  border-width: 2px;
+  cursor: pointer;
+  font-size: 1.1em;
+  font-weight: 600;
+  transition: background-color 0.2s ease;
+  text-align: center;
+}
+
+.button-primary {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+.button-primary:hover {
+  background-color: var(--primary-hover-color);
+  border-color: var(--primary-hover-color);
+}
+
+.button-secondary {
+  background-color: var(--secondary-color);
+  border-color: var(--secondary-color);
+}
+
+.button-secondary:hover {
+  background-color: var(--secondary-hover-color);
+  border-color: var(--secondary-hover-color);
+}
+
+.actions-container { margin-top: 20px; margin-bottom: 30px; }
+
+.service-list-container { margin-top: 20px; }
+
+#serviceList { list-style-type: none; padding: 0; }
+
+.service-item {
+  border: 1px solid #e0e0e0;
+  border-left-width: 4px;
+  padding: 15px;
+  margin-bottom: 10px;
+}
+
+.service-item-main { display: flex; justify-content: space-between; align-items: center; }
+
+.service-title { font-size: 1.2rem; font-weight: 600; margin-bottom: 8px; }
+
+.service-item .timestamps { font-size: 0.9rem; }
+
+.service-item .duration, .service-item .comparison {
+  font-size: 0.85rem;
+  color: var(--text-light-color);
+  margin-top: 5px;
+}
+
+.service-item .value { font-size: 1.5rem; font-weight: 600; color: var(--primary-color); }
+
+.details-toggle { background: none; border: none; padding: 8px 0; margin-top: 15px; color: var(--primary-color); font-weight: 600; cursor: pointer; font-size: 0.9em; }
+
+.details-toggle:hover { text-decoration: underline; }
+
+.details-content { display: none; margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border-color); font-size: 0.9rem; }
+
+.details-content p { margin: 8px 0; }
+
+.details-content strong { color: var(--text-color); font-weight: 600; }
+
+.details-content .analysis-section { margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border-color); }
+
+.details-content .analysis-result { font-weight: 600; color: #00a300; }
+
+.details-content .analysis-result.loss { color: #a20025; }
+
+.details-content.visible { display: block; }
