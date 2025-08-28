@@ -1,170 +1,284 @@
-// script.js
+// Suas credenciais do Firebase já estão aqui
+const firebaseConfig = {
+  apiKey: "AIzaSyDakKq5sF2FbwgmZh0M847rR8XJBaiKNE8",
+  authDomain: "controle-de-ganhos-be71e.firebaseapp.com",
+  projectId: "controle-de-ganhos-be71e",
+  storageBucket: "controle-de-ganhos-be71e.appspot.com",
+  messagingSenderId: "893459783087",
+  appId: "1:893459783087:web:3a8852fc8b23de8e2c635a"
+};
+
+// Inicializa o Firebase
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
 document.addEventListener('DOMContentLoaded', () => {
-  const addServiceForm = document.getElementById('addServiceForm');
-  const serviceList = document.getElementById('serviceList');
-  const totalGainsEl = document.getElementById('totalGains');
-  const serviceCountEl = document.getElementById('serviceCount');
-  const downloadPdfBtn = document.getElementById('downloadPdfBtn');
-  const borderColors = ['#0072c6', '#6a00ff', '#fa6800', '#18837e', '#a20025', '#00a300'];
+    // Elementos de Login e App
+    const loginContainer = document.getElementById('login-container');
+    const appContainer = document.getElementById('app-container');
+    const loginBtn = document.getElementById('loginBtn');
+    const usernameInput = document.getElementById('username');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const currentUserEl = document.getElementById('currentUser');
+    
+    // Elementos do App principal
+    const addServiceForm = document.getElementById('addServiceForm');
+    const serviceList = document.getElementById('serviceList');
+    const totalGainsEl = document.getElementById('totalGains');
+    const serviceCountEl = document.getElementById('serviceCount');
 
-  const valorAtendimentoBase = 120.00;
-  const valorHoraExtra = 25.00;
-  const valorDiaria = 250.00;
+    // Elementos do Modal de Edição
+    const editModal = document.getElementById('editModal');
+    const editServiceForm = document.getElementById('editServiceForm');
+    const closeModalBtn = document.querySelector('.close-button');
 
-  let allServices = [];
-  let totalGains = 0;
-  let serviceCount = 0;
+    const borderColors = ['#0072c6', '#6a00ff', '#fa6800', '#18837e', '#a20025', '#00a300'];
+    let allServices = [];
+    let currentUserName = localStorage.getItem('userName');
 
-  addServiceForm.addEventListener('submit', (event) => {
-    event.preventDefault();
-
-    const serviceName = document.getElementById('serviceName').value;
-    const serviceDate = document.getElementById('serviceDate').value;
-    const startTime = document.getElementById('startTime').value;
-    const endTime = document.getElementById('endTime').value;
-    const serviceType = document.getElementById('serviceType').value;
-
-    if (!serviceName || !serviceDate || !startTime || !endTime) return alert('Preencha todos os campos.');
-
-    const startDateTime = new Date(`${serviceDate}T${startTime}`);
-    let endDateTime = new Date(`${serviceDate}T${endTime}`);
-    if (endDateTime <= startDateTime) endDateTime.setDate(endDateTime.getDate() + 1);
-
-    const totalHours = (endDateTime - startDateTime) / (1000 * 60 * 60);
-    const baseHours = 3;
-    const gracePeriodLimit = baseHours + (20 / 60);
-    let extraHours = 0;
-    if (totalHours > gracePeriodLimit) extraHours = totalHours - gracePeriodLimit;
-
-    const atendimentoTotal = valorAtendimentoBase + (extraHours * valorHoraExtra);
-    let serviceValue = (serviceType === 'atendimento') ? atendimentoTotal : valorDiaria;
-
-    allServices.push({
-      name: serviceName,
-      date: startDateTime,
-      atendimentoValue: atendimentoTotal,
-      diariaValue: valorDiaria,
-      chosenValue: serviceValue,
-      hours: totalHours
-    });
-
-    renderService(serviceName, startDateTime, endDateTime, totalHours, serviceType, atendimentoTotal, valorDiaria);
-    updateSummary();
-    addServiceForm.reset();
-  });
-
-  function renderService(serviceName, startDateTime, endDateTime, totalHours, serviceType, atendimentoTotal, valorDiaria) {
-    const listItem = document.createElement('li');
-    listItem.classList.add('service-item');
-    const colorIndex = (serviceCount) % borderColors.length;
-    listItem.style.borderLeftColor = borderColors[colorIndex];
-
-    const durationH = Math.floor(totalHours);
-    const durationM = Math.round((totalHours - durationH) * 60);
-    const durationText = `${durationH}h ${durationM}min`;
-
-    const comparisonText = serviceType === 'atendimento'
-      ? valorDiaria > atendimentoTotal ? `Compensava mais a Diária (R$ ${valorDiaria.toFixed(2)})` : 'Atendimento Padrão foi a melhor opção.'
-      : atendimentoTotal > valorDiaria ? `Compensava mais o Atendimento (R$ ${atendimentoTotal.toFixed(2)})` : 'A Diária foi a melhor opção.';
-
-    const hourlyRate = totalHours > 0 ? ((serviceType === 'atendimento' ? atendimentoTotal : valorDiaria) / totalHours) : 0;
-    const extraHours = totalHours > (3 + 20/60) ? totalHours - (3 + 20/60) : 0;
-    const extraHoursH = Math.floor(extraHours);
-    const extraHoursM = Math.round((extraHours - extraHoursH) * 60);
-    const difference = Math.abs(atendimentoTotal - valorDiaria);
-
-    let analysisHTML = '';
-    if (serviceType === 'atendimento') {
-      if (atendimentoTotal >= valorDiaria) analysisHTML = `<p class="analysis-result">Você ganhou R$ ${difference.toFixed(2)} a mais do que se tivesse cobrado a diária.</p>`;
-      else analysisHTML = `<p class="analysis-result loss">Você deixou de ganhar R$ ${difference.toFixed(2)} por não ter cobrado a diária.</p>`;
-    } else {
-      if (valorDiaria >= atendimentoTotal) analysisHTML = `<p class="analysis-result">Você ganhou R$ ${difference.toFixed(2)} a mais por ter cobrado a diária.</p>`;
-      else analysisHTML = `<p class="analysis-result loss">Você deixou de ganhar R$ ${difference.toFixed(2)} por não ter cobrado por atendimento.</p>`;
+    // --- LÓGICA DE LOGIN E CONTROLE DE VISIBILIDADE ---
+    function showApp() {
+        currentUserEl.textContent = currentUserName;
+        loginContainer.style.display = 'none';
+        appContainer.style.display = 'block';
+        loadServices();
     }
 
-    const formatOptions = { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' };
-    listItem.innerHTML = `
-      <div class="service-item-main">
-        <div class="details">
-          <div class="service-title">${serviceName}</div>
-          <div class="timestamps">
-            <div><strong>Entrada:</strong> ${startDateTime.toLocaleString('pt-BR', formatOptions)} | <strong>Saída:</strong> ${endDateTime.toLocaleString('pt-BR', formatOptions)}</div>
-          </div>
-          <div class="duration">Duração total: ${durationText}</div>
-          <div class="comparison">${comparisonText}</div>
-        </div>
-        <div class="value">R$ ${(serviceType === 'atendimento' ? atendimentoTotal : valorDiaria).toFixed(2)}</div>
-      </div>
-      <button class="details-toggle">Ver detalhes</button>
-      <div class="details-content">
-        <p><strong>Regras de Cálculo:</strong></p>
-        <p>• Valor Fixo Atendimento: R$ ${valorAtendimentoBase.toFixed(2)}</p>
-        <p>• Valor por Hora Extra: R$ ${valorHoraExtra.toFixed(2)}</p>
-        <hr>
-        <p><strong>Detalhamento do Serviço:</strong></p>
-        <p>• Horas Extras Feitas: ${extraHoursH}h ${extraHoursM}min</p>
-        <p>• Valor Recebido por Extras: R$ ${(extraHours * valorHoraExtra).toFixed(2)}</p>
-        <p>• Ganho por Hora no Serviço: R$ ${hourlyRate.toFixed(2)}</p>
-        <div class="analysis-section">
-          <p><strong>Análise Financeira:</strong></p>
-          <p>• Valor como Atendimento: R$ ${atendimentoTotal.toFixed(2)}</p>
-          <p>• Valor como Diária: R$ ${valorDiaria.toFixed(2)}</p>
-          ${analysisHTML}
-        </div>
-      </div>
-    `;
+    function showLogin() {
+        localStorage.removeItem('userName');
+        currentUserName = null;
+        loginContainer.style.display = 'block';
+        appContainer.style.display = 'none';
+    }
 
-    serviceList.prepend(listItem);
-
-    const detailsToggleBtn = listItem.querySelector('.details-toggle');
-    detailsToggleBtn.addEventListener('click', () => {
-      const detailsContent = listItem.querySelector('.details-content');
-      detailsContent.classList.toggle('visible');
-      detailsToggleBtn.textContent = detailsContent.classList.contains('visible') ? 'Ocular detalhes' : 'Ver detalhes';
-    });
-  }
-
-  function updateSummary() {
-    totalGains = allServices.reduce((sum, service) => sum + service.chosenValue, 0);
-    serviceCount = allServices.length;
-    totalGainsEl.textContent = `R$ ${totalGains.toFixed(2)}`;
-    serviceCountEl.textContent = serviceCount;
-  }
-
-  downloadPdfBtn.addEventListener('click', () => {
-    if (allServices.length === 0) return alert("Nenhum serviço foi adicionado para gerar o relatório.");
-
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
-
-    let y = 20;
-    doc.setFontSize(18);
-    doc.text("Relatório de Ganhos", 14, y);
-    y += 10;
-    doc.setFontSize(12);
-
-    const reportTotalGains = allServices.reduce((sum, s) => sum + s.chosenValue, 0);
-    const reportTotalHours = allServices.reduce((sum, s) => sum + s.hours, 0);
-    const reportAvgHourlyRate = reportTotalHours > 0 ? (reportTotalGains / reportTotalHours) : 0;
-    const reportTotalHoursH = Math.floor(reportTotalHours);
-    const reportTotalHoursM = Math.round((reportTotalHours - reportTotalHoursH) * 60);
-
-    doc.text(`Total de Serviços: ${allServices.length}`, 14, y); y += 7;
-    doc.text(`Total de Horas Trabalhadas: ${reportTotalHoursH}h ${reportTotalHoursM}min`, 14, y); y += 7;
-    doc.text(`Valor Total Recebido: R$ ${reportTotalGains.toFixed(2)}`, 14, y); y += 7;
-    doc.text(`Média de Ganhos por Hora: R$ ${reportAvgHourlyRate.toFixed(2)}`, 14, y); y += 10;
-
-    allServices.forEach((s, index) => {
-      const hoursH = Math.floor(s.hours);
-      const hoursM = Math.round((s.hours - hoursH) * 60);
-      doc.text(`Serviço ${index + 1}: ${s.name}`, 14, y); y += 6;
-      doc.text(`Data: ${s.date.toLocaleDateString('pt-BR')}`, 14, y); y += 6;
-      doc.text(`Duração: ${hoursH}h ${hoursM}min`, 14, y); y += 6;
-      doc.text(`Valor Recebido: R$ ${s.chosenValue.toFixed(2)}`, 14, y); y += 8;
-
-      if (y > 270) { doc.addPage(); y = 20; }
+    loginBtn.addEventListener('click', () => {
+        const userName = usernameInput.value.trim();
+        if (userName) {
+            currentUserName = userName;
+            localStorage.setItem('userName', currentUserName);
+            showApp();
+        } else {
+            alert('Por favor, digite um nome de usuário.');
+        }
     });
 
-    doc.save("relatorio-de-ganhos.pdf");
-  });
+    logoutBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (confirm('Você tem certeza que deseja sair?')) {
+            showLogin();
+        }
+    });
+    
+    // --- LÓGICA DO FIREBASE (CRUD) ---
+    async function loadServices() {
+        if (!currentUserName) return;
+
+        serviceList.innerHTML = '<p>Carregando serviços...</p>';
+        try {
+            const querySnapshot = await db.collection("servicos")
+                .where("userName", "==", currentUserName)
+                .orderBy("date", "desc")
+                .get();
+            
+            allServices = [];
+            serviceList.innerHTML = '';
+            if (querySnapshot.empty) {
+                serviceList.innerHTML = '<p>Nenhum serviço lançado por você ainda.</p>';
+            }
+            
+            querySnapshot.forEach((doc) => {
+                const serviceData = doc.data();
+                serviceData.id = doc.id;
+                const serviceWithJsDate = { ...serviceData, date: serviceData.date.toDate() };
+                allServices.push(serviceWithJsDate);
+                renderService(serviceWithJsDate);
+            });
+            updateSummary();
+        } catch (error) {
+            console.error("Erro ao carregar serviços: ", error);
+            serviceList.innerHTML = '<p>Ocorreu um erro ao carregar os serviços. Verifique o console para mais detalhes.</p>';
+        }
+    }
+
+    function calculateValues(startDateTime, endDateTime, serviceType) {
+        const totalHours = (endDateTime - startDateTime) / (1000 * 60 * 60);
+        const baseHours = 3;
+        const gracePeriodLimit = baseHours + (20 / 60);
+        let extraHours = 0;
+        if (totalHours > gracePeriodLimit) extraHours = totalHours - gracePeriodLimit;
+        
+        const valorAtendimentoBase = 120.00;
+        const valorHoraExtra = 25.00;
+        const valorDiaria = 250.00;
+        const atendimentoTotal = valorAtendimentoBase + (extraHours * valorHoraExtra);
+        const chosenValue = (serviceType === 'atendimento') ? atendimentoTotal : valorDiaria;
+
+        return { totalHours, atendimentoTotal, diariaValue: valorDiaria, chosenValue };
+    }
+
+    addServiceForm.addEventListener('submit', (event) => {
+        event.preventDefault();
+        const serviceName = document.getElementById('serviceName').value;
+        const serviceDate = document.getElementById('serviceDate').value;
+        const startTime = document.getElementById('startTime').value;
+        const endTime = document.getElementById('endTime').value;
+        const serviceType = document.getElementById('serviceType').value;
+
+        if (!serviceName || !serviceDate || !startTime || !endTime) return alert('Preencha todos os campos.');
+
+        const startDateTime = new Date(`${serviceDate}T${startTime}`);
+        let endDateTime = new Date(`${serviceDate}T${endTime}`);
+        if (endDateTime <= startDateTime) endDateTime.setDate(endDateTime.getDate() + 1);
+
+        const values = calculateValues(startDateTime, endDateTime, serviceType);
+
+        db.collection("servicos").add({
+            userName: currentUserName,
+            name: serviceName,
+            date: startDateTime,
+            type: serviceType,
+            atendimentoValue: values.atendimentoTotal,
+            diariaValue: values.diariaValue,
+            chosenValue: values.chosenValue,
+            hours: values.totalHours
+        }).then(() => {
+            alert("Serviço salvo com sucesso!");
+            addServiceForm.reset();
+            loadServices();
+        }).catch(error => console.error("Erro ao salvar: ", error));
+    });
+
+    serviceList.addEventListener('click', (e) => {
+        const serviceItem = e.target.closest('.service-item');
+        if (!serviceItem) return;
+        const serviceId = serviceItem.dataset.id;
+        
+        if (e.target.classList.contains('delete')) {
+            deleteService(serviceId);
+        } else if (e.target.classList.contains('edit')) {
+            openEditModal(serviceId);
+        }
+    });
+
+    function deleteService(id) {
+        if (confirm("Você tem certeza que deseja excluir este serviço?")) {
+            db.collection("servicos").doc(id).delete()
+            .then(() => {
+                alert("Serviço excluído com sucesso!");
+                loadServices();
+            })
+            .catch(error => console.error("Erro ao excluir: ", error));
+        }
+    }
+
+    // --- LÓGICA DO MODAL DE EDIÇÃO ---
+    function openEditModal(id) {
+        const service = allServices.find(s => s.id === id);
+        if (!service) return;
+
+        document.getElementById('editServiceId').value = service.id;
+        document.getElementById('editServiceName').value = service.name;
+        
+        const date = new Date(service.date);
+        const endDate = new Date(date.getTime() + service.hours * 3600 * 1000);
+
+        document.getElementById('editServiceDate').value = date.toISOString().split('T')[0];
+        document.getElementById('editStartTime').value = date.toTimeString().split(' ')[0].substring(0, 5);
+        document.getElementById('editEndTime').value = endDate.toTimeString().split(' ')[0].substring(0, 5);
+        document.getElementById('editServiceType').value = service.type;
+        
+        editModal.style.display = 'block';
+    }
+
+    closeModalBtn.onclick = () => editModal.style.display = 'none';
+    window.onclick = (event) => {
+        if (event.target == editModal) {
+            editModal.style.display = 'none';
+        }
+    };
+    
+    editServiceForm.addEventListener('submit', (event) => {
+        event.preventDefault();
+        
+        const id = document.getElementById('editServiceId').value;
+        const serviceName = document.getElementById('editServiceName').value;
+        const serviceDate = document.getElementById('editServiceDate').value;
+        const startTime = document.getElementById('editStartTime').value;
+        const endTime = document.getElementById('editEndTime').value;
+        const serviceType = document.getElementById('editServiceType').value;
+
+        const startDateTime = new Date(`${serviceDate}T${startTime}`);
+        let endDateTime = new Date(`${serviceDate}T${endTime}`);
+        if (endDateTime <= startDateTime) endDateTime.setDate(endDateTime.getDate() + 1);
+
+        const values = calculateValues(startDateTime, endDateTime, serviceType);
+
+        const updatedService = {
+            userName: currentUserName,
+            name: serviceName,
+            date: startDateTime,
+            type: serviceType,
+            atendimentoValue: values.atendimentoTotal,
+            diariaValue: values.diariaValue,
+            chosenValue: values.chosenValue,
+            hours: values.totalHours
+        };
+
+        db.collection("servicos").doc(id).update(updatedService)
+        .then(() => {
+            alert("Serviço atualizado com sucesso!");
+            editModal.style.display = 'none';
+            loadServices();
+        })
+        .catch(error => console.error("Erro ao atualizar: ", error));
+    });
+
+    // --- FUNÇÕES DE RENDERIZAÇÃO E ATUALIZAÇÃO ---
+    function renderService(service) {
+        const listItem = document.createElement('li');
+        listItem.classList.add('service-item');
+        listItem.setAttribute('data-id', service.id);
+        
+        const colorIndex = (allServices.findIndex(s => s.id === service.id)) % borderColors.length;
+        listItem.style.borderLeftColor = borderColors[colorIndex];
+
+        const endDate = new Date(service.date.getTime() + service.hours * 3600 * 1000);
+        const durationH = Math.floor(service.hours);
+        const durationM = Math.round((service.hours - durationH) * 60);
+        const durationText = `${durationH}h ${durationM}min`;
+        
+        const formatOptions = { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' };
+        listItem.innerHTML = `
+            <div class="service-item-main">
+                <div class="details">
+                    <div class="service-title">${service.name}</div>
+                    <div class="timestamps">
+                        <div><strong>Entrada:</strong> ${service.date.toLocaleString('pt-BR', formatOptions)}</div>
+                        <div><strong>Saída:</strong> ${endDate.toLocaleString('pt-BR', formatOptions)}</div>
+                    </div>
+                    <div class="duration">Duração total: ${durationText}</div>
+                </div>
+                <div class="service-actions">
+                    <i class="fas fa-edit action-icon edit" title="Editar"></i>
+                    <i class="fas fa-trash action-icon delete" title="Excluir"></i>
+                </div>
+                <div class="value">R$ ${service.chosenValue.toFixed(2)}</div>
+            </div>
+        `;
+        serviceList.appendChild(listItem);
+    }
+
+    function updateSummary() {
+        const totalGains = allServices.reduce((sum, s) => sum + s.chosenValue, 0);
+        const serviceCount = allServices.length;
+        totalGainsEl.textContent = `R$ ${totalGains.toFixed(2)}`;
+        serviceCountEl.textContent = serviceCount;
+    }
+
+    // --- INICIALIZAÇÃO ---
+    if (currentUserName) {
+        showApp();
+    } else {
+        showLogin();
+    }
 });

@@ -1,69 +1,118 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Lançamento de Ganhos</title>
-  <link href="https://fonts.googleapis.com/css2?family=Segoe+UI:wght@300;400;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lançamento de Ganhos</title>
+    <link href="https://fonts.googleapis.com/css2?family=Segoe+UI:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="container">
-    <h1>Controle de Ganhos de TI</h1>
-    <div id="summary" class="summary-grid">
-      <div class="summary-box">
-        <h2>Ganho Total</h2>
-        <p id="totalGains">R$ 0,00</p>
-      </div>
-      <div class="summary-box">
-        <h2>Total de Serviços</h2>
-        <p id="serviceCount">0</p>
-      </div>
+    
+    <div class="container">
+        <div id="login-container">
+            <h1>Identificação</h1>
+            <h3>Digite seu nome de usuário para continuar</h3>
+            <div class="form-group">
+                <label for="username">Seu Nome de Usuário</label>
+                <input type="text" id="username" placeholder="Ex: joao.silva" required>
+            </div>
+            <button id="loginBtn" class="button-primary">Entrar</button>
+        </div>
+
+        <div id="app-container" style="display: none;">
+            <h1>Lançamento de Serviço</h1>
+            <p class="welcome-message">Bem-vindo(a), <strong id="currentUser"></strong>! <a href="#" id="logoutBtn">(Sair)</a></p>
+            
+            <div id="summary" class="summary-grid">
+                <div class="summary-box">
+                    <h2>Seu Ganho Total</h2>
+                    <p id="totalGains">R$ 0,00</p>
+                </div>
+                <div class="summary-box">
+                    <h2>Seus Serviços</h2>
+                    <p id="serviceCount">0</p>
+                </div>
+            </div>
+            
+            <div class="form-container">
+                <h3>Adicionar Novo Serviço</h3>
+                <form id="addServiceForm">
+                    <div class="form-group">
+                        <label for="serviceName">Nome do Serviço / Cliente</label>
+                        <input type="text" id="serviceName" name="serviceName" placeholder="Ex: Instalação Servidor - Empresa X" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="serviceDate">Data do Serviço</label>
+                        <input type="date" id="serviceDate" name="serviceDate" required>
+                    </div>
+                    <div class="time-inputs">
+                        <div class="form-group">
+                            <label for="startTime">Hora de Início</label>
+                            <input type="time" id="startTime" name="startTime" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="endTime">Hora de Fim</label>
+                            <input type="time" id="endTime" name="endTime" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="serviceType">Tipo de Serviço Cobrado</label>
+                        <select id="serviceType" name="serviceType" required>
+                            <option value="atendimento">Atendimento Padrão</option>
+                            <option value="diaria">Diária</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="button-primary">Adicionar Serviço</button>
+                </form>
+            </div>
+            
+            <div class="service-list-container">
+                <h2>Seus Serviços Lançados</h2>
+                <ul id="serviceList"></ul>
+            </div>
+        </div>
     </div>
 
-    <div class="form-container">
-      <h3>Adicionar Novo Serviço</h3>
-      <form id="addServiceForm">
-        <div class="form-group">
-          <label for="serviceName">Nome do Serviço / Cliente</label>
-          <input type="text" id="serviceName" name="serviceName" placeholder="Ex: Instalação Servidor - Empresa X" required>
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <h3>Editar Serviço</h3>
+            <form id="editServiceForm">
+                <input type="hidden" id="editServiceId">
+                <div class="form-group">
+                    <label for="editServiceName">Nome do Serviço / Cliente</label>
+                    <input type="text" id="editServiceName" required>
+                </div>
+                <div class="form-group">
+                    <label for="editServiceDate">Data do Serviço</label>
+                    <input type="date" id="editServiceDate" required>
+                </div>
+                <div class="time-inputs">
+                    <div class="form-group">
+                        <label for="editStartTime">Hora de Início</label>
+                        <input type="time" id="editStartTime" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editEndTime">Hora de Fim</label>
+                        <input type="time" id="editEndTime" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="editServiceType">Tipo de Serviço Cobrado</label>
+                    <select id="editServiceType" required>
+                        <option value="atendimento">Atendimento Padrão</option>
+                        <option value="diaria">Diária</option>
+                    </select>
+                </div>
+                <button type="submit" class="button-primary">Salvar Alterações</button>
+            </form>
         </div>
-        <div class="form-group">
-          <label for="serviceDate">Data do Serviço</label>
-          <input type="date" id="serviceDate" name="serviceDate" required>
-        </div>
-        <div class="time-inputs">
-          <div class="form-group">
-            <label for="startTime">Hora de Início</label>
-            <input type="time" id="startTime" name="startTime" required>
-          </div>
-          <div class="form-group">
-            <label for="endTime">Hora de Fim</label>
-            <input type="time" id="endTime" name="endTime" required>
-          </div>
-        </div>
-        <div class="form-group">
-          <label for="serviceType">Tipo de Serviço Cobrado</label>
-          <select id="serviceType" name="serviceType" required>
-            <option value="atendimento">Atendimento Padrão</option>
-            <option value="diaria">Diária</option>
-          </select>
-        </div>
-        <button type="submit" class="button-primary">Adicionar Serviço</button>
-      </form>
     </div>
-
-    <div class="actions-container">
-      <button id="downloadPdfBtn" class="button-secondary">Baixar Relatório Completo</button>
-    </div>
-
-    <div class="service-list-container">
-      <h2>Serviços Lançados</h2>
-      <ul id="serviceList"></ul>
-    </div>
-  </div>
-
-  <script src="script.js"></script>
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
